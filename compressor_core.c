@@ -26,8 +26,8 @@ float calculate_power(window_t *window, const float input)
     //this will not effect the signal but will prevent a NaN at exactly 0.0
     float pow = 20 * log10((fabs(input - 0.00000001)));
     //remove old sample and add new one to windowPower
-    window->power += pow;
-    return window->power;
+    //window->power += pow;
+    return pow;//window->power;
 }
 
 void RMS_sensing(compressor_t *compressor, float *input, uint32_t n_samples)
