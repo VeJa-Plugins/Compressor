@@ -44,6 +44,12 @@ typedef struct{
     float* limit_threshold;
     float* volume;
 
+    knee_type_t prev_knee;
+    int prev_attack;
+    int prev_release;
+    float prev_ratio;
+    float prev_threshold;
+
     compressor_t compressor;
 
 } Compressor;
@@ -124,7 +130,16 @@ void run(LV2_Handle instance, uint32_t n_samples)
     int attack = *(self->attack);
     int release = *(self->release);
 
-    compressor_update_parameters(&self->compressor, threshold, ratio, attack, release, knee);
+    if ((self->prev_threshold != threshold) || (self->prev_ratio != ratio) || (self->prev_release != release) || (self->prev_knee != knee) || (self->prev_attack != attack))
+    {
+        compressor_update_parameters(&self->compressor, threshold, ratio, attack, release, knee);
+    
+        self->prev_attack = attack;
+        self->prev_release = release;
+        self->prev_knee = knee;
+        self->prev_ratio = ratio;
+        self->prev_threshold = threshold;
+    }
 
     compressor_run(&self->compressor, self->input, self->output, n_samples);
 }
