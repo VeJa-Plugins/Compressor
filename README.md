@@ -1,2 +1,3 @@
-# Compressor
-A simple up / downwards compressor
+# Compressor 
+
+a simple compressor plugin for up and downwards compression
