@@ -5,8 +5,6 @@ project(compressor
         LANGUAGES C
         )
 
-#sharing is caring
-set(SORAMA_SHARED TRUE)
 # Set C 99
 set(CMAKE_C_STANDARD 99)
 
