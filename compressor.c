@@ -127,8 +127,8 @@ void run(LV2_Handle instance, uint32_t n_samples)
     float threshold = *(self->threshold);
     float ratio = *(self->ratio);
     knee_type_t knee = (*(self->knee) == 0)? SOFT_KNEE : HARD_KNEE;
-    int attack = *(self->attack);
-    int release = *(self->release);
+    int attack = (int)(*(self->attack) / (1000.f / Samplerate));
+    int release = (int)(*(self->release) / (1000.f / Samplerate));
 
     if ((self->prev_threshold != threshold) || (self->prev_ratio != ratio) || (self->prev_release != release) || (self->prev_knee != knee) || (self->prev_attack != attack))
     {
