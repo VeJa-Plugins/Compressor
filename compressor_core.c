@@ -24,7 +24,7 @@ float calculate_power(window_t *window, const float input)
 {
     //store and recalculate
     //this will not effect the signal but will prevent a NaN at exactly 0.0
-    float pow = 20 * log10((fabs(input - 0.00000001)));
+    float pow = 20.f * log10f((fabsf(input - 0.0000001f)));
     //remove old sample and add new one to windowPower
     //window->power += pow;
     return pow;//window->power;
@@ -48,16 +48,16 @@ void generate_envelope(compressor_t *compressor, uint32_t n_samples)
         	case DOWNWARD:
         		if (compressor->rms_input_dB[n] > compressor->treshold ) //attack
             	{
-            	    float adjusted_ratio = pow(10, (-1.0 * compressor->ratio / 20.0)) / sqrt(2);
-            	    compressor->envelope_window[n] =  1.0 - ((1.0 - adjusted_ratio) * compressor->envelope.attack_counter * (1.0 / compressor->envelope.attack_length));
+            	    float adjusted_ratio = powf(10.f, (-1.0f * compressor->ratio / 20.0f)) / sqrtf(2.f);
+            	    compressor->envelope_window[n] =  1.0f - ((1.0f - adjusted_ratio) * compressor->envelope.attack_counter * (1.0f / compressor->envelope.attack_length));
 
             	    (compressor->envelope.attack_counter < compressor->envelope.attack_length) ? compressor->envelope.attack_counter++ : (compressor->envelope.attack_counter = compressor->envelope.attack_length);
             	    (compressor->envelope.release_counter > 0) ? compressor->envelope.release_counter-- : (compressor->envelope.release_counter = 0);
             	}
             	else //release
             	{
-            	    float adjusted_ratio = pow(10, (-1.0 * compressor->ratio / 20.0)) / sqrt(2);
-            	    compressor->envelope_window[n] = adjusted_ratio + ((1.0 - adjusted_ratio) * compressor->envelope.release_counter * (1.0 / compressor->envelope.release_length));
+            	    float adjusted_ratio = powf(10.f, (-1.0f * compressor->ratio / 20.0f)) / sqrtf(2.f);
+            	    compressor->envelope_window[n] = adjusted_ratio + ((1.0f - adjusted_ratio) * compressor->envelope.release_counter * (1.0f / compressor->envelope.release_length));
 
             	    (compressor->envelope.release_counter < compressor->envelope.release_length) ? compressor->envelope.release_counter++ : (compressor->envelope.release_counter = compressor->envelope.release_length);
             	    (compressor->envelope.attack_counter > 0) ? compressor->envelope.release_counter-- : (compressor->envelope.attack_counter = 0);
@@ -67,16 +67,16 @@ void generate_envelope(compressor_t *compressor, uint32_t n_samples)
         	case UPWARD:
             	if (compressor->rms_input_dB[n] < compressor->treshold) //attack
             	{
-            	    float adjusted_ratio = 1.0 / (pow(10, (-1.0 * compressor->ratio / 20.0)) / sqrt(2));
-            	    compressor->envelope_window[n] = 1.0 - ((1.0 - adjusted_ratio) * compressor->envelope.attack_counter * (1.0 / compressor->envelope.attack_length));
+            	    float adjusted_ratio = 1.0f / (powf(10.f, (-1.0f * compressor->ratio / 20.0f)) / sqrtf(2.f));
+            	    compressor->envelope_window[n] = 1.0f - ((1.0f - adjusted_ratio) * compressor->envelope.attack_counter * (1.0f / compressor->envelope.attack_length));
 
             	    (compressor->envelope.attack_counter < compressor->envelope.attack_length) ? compressor->envelope.attack_counter++ : (compressor->envelope.attack_counter = compressor->envelope.attack_length);
             	    (compressor->envelope.release_counter > 0) ? compressor->envelope.release_counter-- : (compressor->envelope.release_counter = 0);
             	}
             	else //release
             	{
-            	    float adjusted_ratio = 1.0 / (pow(10, (-1.0 * compressor->ratio / 20.0)) / sqrt(2));
-            	    compressor->envelope_window[n] = adjusted_ratio + ((1.0 - adjusted_ratio) * compressor->envelope.release_counter * (1.0 / compressor->envelope.release_length));
+            	    float adjusted_ratio = 1.0f / (powf(10.f, (-1.0f * compressor->ratio / 20.0f)) / sqrtf(2.f));
+            	    compressor->envelope_window[n] = adjusted_ratio + ((1.0f - adjusted_ratio) * compressor->envelope.release_counter * (1.0f / compressor->envelope.release_length));
 
             	    (compressor->envelope.release_counter < compressor->envelope.release_length) ? compressor->envelope.release_counter++ : (compressor->envelope.release_counter = compressor->envelope.release_length);
             	    (compressor->envelope.attack_counter > 0) ? compressor->envelope.attack_counter-- : (compressor->envelope.attack_counter = 0);
@@ -122,6 +122,7 @@ void compressor_init(compressor_t *compressor, int lookAheadSize, compressor_typ
 
 	//init envelope
 	memset(&compressor->envelope, 0, sizeof(envelope_t));
+    compressor->envelope._Tau = 1.0f / samplerate;
 
 	//init lowpass filter
 	first_order_lowpass_init(&compressor->first_order_lowpass, samplerate);

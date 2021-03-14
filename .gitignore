@@ -1,0 +1,12 @@
+*.bin
+*.d
+*.elf
+*.hex
+*.lst
+*.lss
+*.map
+*.sym
+*.o
+*.so
+*.vs
+/out
