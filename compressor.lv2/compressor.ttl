@@ -8,18 +8,18 @@
 @prefix pset: <http://lv2plug.in/ns/ext/presets#>.
 
 <http://VeJaPlugins.com/plugins/Release/Compressor>
-a lv2:Plugin, lv2:SimulatorPlugin;
+a lv2:Plugin, lv2:DynamicsPlugin;
 
 doap:name "Compressor";
 
 doap:developer [
-    foaf:name "Jarno Verheese & Jan Janssen";
+    foaf:name "VeJa Plugins";
     foaf:homepage <>;
     foaf:mbox <mailto:jan@moddevices.com>;
     ];
 
 doap:maintainer [
-    foaf:name "VeJa plugins";
+    foaf:name "VeJa Plugins";
     foaf:homepage <http://moddevices.com>;
     foaf:mbox <mailto:jan@moddevices.com>;
     ];
