@@ -73,10 +73,10 @@ typedef struct COMPRESSOR_T {
     compressor_type_t compression_mode;
 
     //buffers
-    float rms_input_dB[48000];
-    float threshold_window[48000];
-    float envelope_window[48000];
-    float softknee_window[48000];
+    float rms_input_dB[256];
+    float threshold_window[256];
+    float envelope_window[256];
+    float softknee_window[256];
 
     envelope_t envelope;
     window_t window;
