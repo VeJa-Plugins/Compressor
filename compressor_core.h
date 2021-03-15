@@ -10,7 +10,10 @@
 #ifndef COMPRESSOR_CORE_H_INCLUDED
 #define COMPRESSOR_CORE_H_INCLUDED
 
+#define WINDOW_BUFFER_SIZE 256
+
 #include  "first_order_lowpass.h"
+#include "stdbool.h"
 
 /*
     1. feed forward design
@@ -50,7 +53,8 @@ typedef enum {
 
 typedef struct WINDOW_T {
     float power;
-    int size;
+    float buffer[WINDOW_BUFFER_SIZE];
+    uint32_t writePtr;
 } window_t;
 
 typedef struct ENVELOPE_T {
@@ -69,14 +73,15 @@ typedef struct COMPRESSOR_T {
     compressor_type_t compression_mode;
 
     //buffers
-    float rms_input_dB[256];
-    float threshold_window[256];
-    float envelope_window[256];
-    float softknee_window[256];
+    float rms_input_dB[48000];
+    float threshold_window[48000];
+    float envelope_window[48000];
+    float softknee_window[48000];
 
     envelope_t envelope;
     window_t window;
     first_order_lowpass_filter_t first_order_lowpass;
+    first_order_lowpass_filter_t windowFilter;
 
 } compressor_t;
 

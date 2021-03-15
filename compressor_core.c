@@ -14,11 +14,37 @@
 #include <string.h>
 #include <math.h>
 
-#define LOW_PASS_FILTER_FREQ 40
+#define LOW_PASS_FILTER_FREQ 100
 
 /*******************************************************************************
 								local functions
 *******************************************************************************/
+float get_highest_sample_over_n_samples(window_t* window, const float input)
+{
+    // If we wrap around find the new highest value in our memory. less efficient for big buffers
+    if (window->writePtr == WINDOW_BUFFER_SIZE)
+    {
+        window->writePtr = 0;
+        float maxVal = -140.f;
+        for (uint32_t n = 0; n < WINDOW_BUFFER_SIZE; n++)
+        {   
+            if (window->buffer[n] > maxVal)
+            {
+                 maxVal = window->buffer[n];
+            }
+        }
+        window->power = maxVal;
+    }
+
+    // Store all values in the buffer
+    window->buffer[window->writePtr] = input;
+
+    // increment WritePtr
+    window->writePtr++;
+
+    // Return output
+    return window->power;
+}
 
 float calculate_power(window_t *window, const float input)
 {
@@ -27,7 +53,7 @@ float calculate_power(window_t *window, const float input)
     float pow = 20.f * log10f((fabsf(input - 0.0000001f)));
     //remove old sample and add new one to windowPower
     //window->power += pow;
-    return pow;//window->power;
+    return get_highest_sample_over_n_samples(window ,pow);
 }
 
 void RMS_sensing(compressor_t *compressor, float *input, uint32_t n_samples)
@@ -35,7 +61,38 @@ void RMS_sensing(compressor_t *compressor, float *input, uint32_t n_samples)
     //dbfs value over the signal length
     for (uint32_t n = 0; n < n_samples; n++)
     {
-    	compressor->rms_input_dB[n] = calculate_power(&compressor->window, input[n]);
+        // Calculate power and apply a first order lowpass filter. We need to compensate for the loss in ampliture by 3dB
+    	compressor->rms_input_dB[n] = first_order_lowpass_process(&compressor->windowFilter,calculate_power(&compressor->window, input[n]));
+    }
+}
+
+void generate_treshold(compressor_t* compressor, uint32_t n_samples)
+{
+    for (size_t n = 0; n < n_samples; n++)
+    {
+        switch (compressor->compression_mode)
+        {
+        case DOWNWARD:
+            if (compressor->rms_input_dB[n] > compressor->treshold)
+            {
+                compressor->threshold_window[n] = 1.f;
+            }
+            else
+            {
+                compressor->threshold_window[n] = 0.f;
+            }
+            break;
+        case UPWARD:
+            if (compressor->rms_input_dB[n] < compressor->treshold)
+            {
+                compressor->threshold_window[n] = 1.f;
+            }
+            else
+            {
+                compressor->threshold_window[n] = 0.f;
+            }
+            break;
+        }
     }
 }
 
@@ -46,7 +103,7 @@ void generate_envelope(compressor_t *compressor, uint32_t n_samples)
         switch (compressor->compression_mode)
         {
         	case DOWNWARD:
-        		if (compressor->rms_input_dB[n] > compressor->treshold ) //attack
+        		if (compressor->threshold_window[n] == 1.f ) //attack
             	{
             	    float adjusted_ratio = powf(10.f, (-1.0f * compressor->ratio / 20.0f)) / sqrtf(2.f);
             	    compressor->envelope_window[n] =  1.0f - ((1.0f - adjusted_ratio) * compressor->envelope.attack_counter * (1.0f / compressor->envelope.attack_length));
@@ -60,15 +117,15 @@ void generate_envelope(compressor_t *compressor, uint32_t n_samples)
             	    compressor->envelope_window[n] = adjusted_ratio + ((1.0f - adjusted_ratio) * compressor->envelope.release_counter * (1.0f / compressor->envelope.release_length));
 
             	    (compressor->envelope.release_counter < compressor->envelope.release_length) ? compressor->envelope.release_counter++ : (compressor->envelope.release_counter = compressor->envelope.release_length);
-            	    (compressor->envelope.attack_counter > 0) ? compressor->envelope.release_counter-- : (compressor->envelope.attack_counter = 0);
+            	    (compressor->envelope.attack_counter > 0) ? compressor->envelope.attack_counter-- : (compressor->envelope.attack_counter = 0);
             	}
             break;
 
         	case UPWARD:
-            	if (compressor->rms_input_dB[n] < compressor->treshold) //attack
+            	if (compressor->threshold_window[n] == 1.f) //attack
             	{
             	    float adjusted_ratio = 1.0f / (powf(10.f, (-1.0f * compressor->ratio / 20.0f)) / sqrtf(2.f));
-            	    compressor->envelope_window[n] = 1.0f - ((1.0f - adjusted_ratio) * compressor->envelope.attack_counter * (1.0f / compressor->envelope.attack_length));
+            	    compressor->envelope_window[n] = 1.0f + (adjusted_ratio * compressor->envelope.attack_counter * (1.0f / compressor->envelope.attack_length));
 
             	    (compressor->envelope.attack_counter < compressor->envelope.attack_length) ? compressor->envelope.attack_counter++ : (compressor->envelope.attack_counter = compressor->envelope.attack_length);
             	    (compressor->envelope.release_counter > 0) ? compressor->envelope.release_counter-- : (compressor->envelope.release_counter = 0);
@@ -76,7 +133,7 @@ void generate_envelope(compressor_t *compressor, uint32_t n_samples)
             	else //release
             	{
             	    float adjusted_ratio = 1.0f / (powf(10.f, (-1.0f * compressor->ratio / 20.0f)) / sqrtf(2.f));
-            	    compressor->envelope_window[n] = adjusted_ratio + ((1.0f - adjusted_ratio) * compressor->envelope.release_counter * (1.0f / compressor->envelope.release_length));
+            	    compressor->envelope_window[n] = 1.0f + adjusted_ratio - (adjusted_ratio * compressor->envelope.release_counter * (1.0f / compressor->envelope.release_length));
 
             	    (compressor->envelope.release_counter < compressor->envelope.release_length) ? compressor->envelope.release_counter++ : (compressor->envelope.release_counter = compressor->envelope.release_length);
             	    (compressor->envelope.attack_counter > 0) ? compressor->envelope.attack_counter-- : (compressor->envelope.attack_counter = 0);
@@ -124,9 +181,17 @@ void compressor_init(compressor_t *compressor, int lookAheadSize, compressor_typ
 	memset(&compressor->envelope, 0, sizeof(envelope_t));
     compressor->envelope._Tau = 1.0f / samplerate;
 
-	//init lowpass filter
+   // Window settings
+    memset(&compressor->window.buffer, 0, sizeof(compressor->window.buffer));
+    compressor->window.power = -140.f;
+    compressor->window.writePtr = 0;
+
+	//init lowpass filters
 	first_order_lowpass_init(&compressor->first_order_lowpass, samplerate);
 	first_order_lowpass_set(&compressor->first_order_lowpass, LOW_PASS_FILTER_FREQ);
+
+    first_order_lowpass_init(&compressor->windowFilter, samplerate);
+	first_order_lowpass_set(&compressor->windowFilter, LOW_PASS_FILTER_FREQ);
 
 }
 
@@ -142,6 +207,7 @@ void compressor_update_parameters(compressor_t *compressor, float treshold, floa
 void compressor_run(compressor_t *compressor, float* input, float* output, uint32_t n_samples)
 {
     RMS_sensing(compressor, input, n_samples);
+    generate_treshold(compressor, n_samples);
     generate_envelope(compressor, n_samples);
     generate_soft_knee(compressor, n_samples);
     apply_gain(compressor, output, input, n_samples);

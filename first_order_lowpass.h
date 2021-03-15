@@ -41,9 +41,6 @@ typedef struct FIRST_ORDER_LOWPASS_FILTER_T {
     //internal memory
     float X_0, Y_0;
     float K, A, B, f, wc;
-
-    //detect filter firsts sample    
-    int init;
 } first_order_lowpass_filter_t;
 
 
