@@ -38,26 +38,22 @@
         --TODO
 */
 
-typedef enum
-{
+typedef enum {
     DOWNWARD,
     UPWARD
 } compressor_type_t;
 
-typedef enum
-{
+typedef enum {
     SOFT_KNEE,
     HARD_KNEE
 } knee_type_t;
 
-typedef struct WINDOW_T
-{
+typedef struct WINDOW_T {
     float power;
     int size;
 } window_t;
 
-typedef struct ENVELOPE_T
-{
+typedef struct ENVELOPE_T {
     float _Tau;
     int attack_length;
     int attack_counter;
@@ -65,8 +61,7 @@ typedef struct ENVELOPE_T
     int release_counter;
 } envelope_t;
 
-typedef struct COMPRESSOR_T
-{
+typedef struct COMPRESSOR_T {
     float gain;
     float ratio;
     float treshold;

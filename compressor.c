@@ -14,6 +14,7 @@
 #define MAP(x, Imin, Imax, Omin, Omax)      ( x - Imin ) * (Omax -  Omin)  / (Imax - Imin) + Omin;
 
 #define COMP_BUF_SIZE 256
+#define SAMPLERATE 48000
 
 typedef enum {
     PLUGIN_INPUT,
@@ -67,7 +68,7 @@ const LV2_Feature* const* features)
 {
     Compressor* self = (Compressor*)malloc(sizeof(Compressor));
 
-    compressor_init(self->compressor, COMP_BUF_SIZE, DOWNWARD, 48000);
+    compressor_init(&self->compressor, COMP_BUF_SIZE, DOWNWARD, 48000);
 
     return (LV2_Handle)self;
 }
@@ -127,12 +128,12 @@ void run(LV2_Handle instance, uint32_t n_samples)
     float threshold = *(self->threshold);
     float ratio = *(self->ratio);
     knee_type_t knee = (*(self->knee) == 0)? SOFT_KNEE : HARD_KNEE;
-    int attack = (int)(*(self->attack) / (1000.f / Samplerate));
-    int release = (int)(*(self->release) / (1000.f / Samplerate));
+    int attack = (int)(*(self->attack) / (1000.f / SAMPLERATE));
+    int release = (int)(*(self->release) / (1000.f / SAMPLERATE));
 
     if ((self->prev_threshold != threshold) || (self->prev_ratio != ratio) || (self->prev_release != release) || (self->prev_knee != knee) || (self->prev_attack != attack))
     {
-        compressor_update_parameters(self->compressor, threshold, ratio, attack, release, knee);
+        compressor_update_parameters(&self->compressor, threshold, ratio, attack, release, knee);
     
         self->prev_attack = attack;
         self->prev_release = release;
@@ -141,7 +142,7 @@ void run(LV2_Handle instance, uint32_t n_samples)
         self->prev_threshold = threshold;
     }
 
-    compressor_run(self->compressor, self->input, self->output, n_samples);
+    compressor_run(&self->compressor, self->input, self->output, n_samples);
 }
 
 /**********************************************************************************************************************************************************/
