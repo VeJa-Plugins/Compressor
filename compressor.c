@@ -5,8 +5,6 @@
 #include <stdbool.h>
 #include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 
-#include "compressor_core.h"
-
 /**********************************************************************************************************************************************************/
 
 #define PLUGIN_URI "http://VeJaPlugins.com/plugins/Release/Compressor"
@@ -45,13 +43,13 @@ typedef struct{
     float* limit_threshold;
     float* volume;
 
-    knee_type_t prev_knee;
-    int prev_attack;
-    int prev_release;
-    float prev_ratio;
-    float prev_threshold;
+    //knee_type_t prev_knee;
+    //int prev_attack;
+    //int prev_release;
+    //float prev_ratio;
+    //float prev_threshold;
 
-    compressor_t compressor;
+    //compressor_t compressor;
 
 } Compressor;
 
@@ -68,7 +66,7 @@ const LV2_Feature* const* features)
 {
     Compressor* self = (Compressor*)malloc(sizeof(Compressor));
 
-    compressor_init(&self->compressor, COMP_BUF_SIZE, DOWNWARD, 48000);
+    //compressor_init(&self->compressor, COMP_BUF_SIZE, DOWNWARD, 48000);
 
     return (LV2_Handle)self;
 }
@@ -121,7 +119,7 @@ void activate(LV2_Handle instance)
 void run(LV2_Handle instance, uint32_t n_samples)
 {
     Compressor* self = (Compressor*)instance;    
-
+/*
     //controls
     float makeup = *(self->makeup);
     float volume = *(self->volume);
@@ -142,7 +140,7 @@ void run(LV2_Handle instance, uint32_t n_samples)
         self->prev_threshold = threshold;
     }
 
-    compressor_run(&self->compressor, self->input, self->output, n_samples);
+    compressor_run(&self->compressor, self->input, self->output, n_samples);*/
 }
 
 /**********************************************************************************************************************************************************/

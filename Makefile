@@ -23,7 +23,7 @@ build: $(NAME)-build
 
 $(NAME)-build: $(NAME).lv2/$(NAME)$(LIB_EXT)
 
-$(NAME).lv2/$(NAME)$(LIB_EXT): $(NAME).c compressor_core.c first_order_lowpass.c
+$(NAME).lv2/$(NAME)$(LIB_EXT): $(NAME).c
 	$(CC) $^ $(BUILD_C_FLAGS) $(LINK_FLAGS) -lm $(SHARED) -o $@
 
 # --------------------------------------------------------------

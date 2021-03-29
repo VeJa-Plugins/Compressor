@@ -49,52 +49,44 @@ lv2:port
     lv2:shortname "Output";
 ],
 [
-    a lv2:ControlPort, lv2:InputPort;
+    a lv2:InputPort, lv2:ControlPort;
     lv2:index 2;
-    lv2:symbol "MakeupGain";
-    lv2:name "Makeup Gain";
-    lv2:shortname "MakeupGain";
-    lv2:default 12;
-    lv2:minimum -30;
-    lv2:maximum 24;
-    units:unit   units:db
+    lv2:symbol "DOWN_ON";
+    lv2:name "Downwards Compression";
+    lv2:shortname "Dwn Compression";
+    lv2:portProperty lv2:toggled , lv2:integer ;
+    lv2:default 1 ;
+    lv2:minimum 0 ;
+    lv2:maximum 1 ;
 ],
 [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 3;
-    lv2:symbol "CompressorThreshold";
-    lv2:name "Compressor Threshold";
-    lv2:shortname "CompressorThreshold";
+    lv2:symbol "DOWN_THRES";
+    lv2:name "Downwards Threshold";
+    lv2:shortname "Dwn Threshold";
     lv2:default -20;
     lv2:minimum -50;
     lv2:maximum 0;
     units:unit   units:db
 ],
 [
-    a lv2:InputPort, lv2:ControlPort;
+    a lv2:ControlPort, lv2:InputPort;
     lv2:index 4;
-    lv2:symbol "Knee";
-    lv2:name "Knee";
-    lv2:shortname "Knee";
-    lv2:portProperty lv2:enumeration , lv2:integer ;
-    lv2:default 0 ;
-    lv2:minimum 0 ;
-    lv2:maximum 1 ;
-    lv2:scalePoint
-    [
-        rdfs:label "Soft" ;
-        rdf:value 0 
-    ] , [
-        rdfs:label "Hard" ;
-        rdf:value 1 
-    ]
+    lv2:symbol "DOWN_KNEE";
+    lv2:name "Downwards Knee";
+    lv2:shortname "Dwn Knee";
+    lv2:default 20;
+    lv2:minimum 0;
+    lv2:maximum 40;
+    units:unit   units:db
 ],
 [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 5;
-    lv2:symbol "CompressorAttack";
-    lv2:name "Compressor Attack";
-    lv2:shortname "ComressorAttack";
+    lv2:symbol "DOWN_ATTACK";
+    lv2:name "Downwards Attack";
+    lv2:shortname "Dwn Attack";
     lv2:default 10;
     lv2:minimum 0.1;
     lv2:maximum 200;
@@ -103,9 +95,9 @@ lv2:port
 [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 6;
-    lv2:symbol "CompressorRelease";
-    lv2:name "Compressor Release";
-    lv2:shortname "CompressorRelease";
+    lv2:symbol "DOWN_RELEASE";
+    lv2:name "Downwards Release";
+    lv2:shortname "Dwn Release";
     lv2:default 100;
     lv2:minimum 1;
     lv2:maximum 5000;
@@ -114,9 +106,9 @@ lv2:port
 [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 7;
-    lv2:symbol "Ratio";
-    lv2:name "Ratio";
-    lv2:shortname "Ratio";
+    lv2:symbol "DOWN_RATIO";
+    lv2:name "Downwards Ratio";
+    lv2:shortname "Dwn Ratio";
     lv2:default 1;
     lv2:minimum 1;
     lv2:maximum 30;
@@ -125,20 +117,108 @@ lv2:port
 [
     a lv2:ControlPort, lv2:InputPort;
     lv2:index 8;
-    lv2:symbol "LimiterThreshold";
+    lv2:symbol "DOWN_MAKEUP";
+    lv2:name "Downwards Makeup Gain";
+    lv2:shortname "Dwn MakeupGain";
+    lv2:default 12;
+    lv2:minimum -30;
+    lv2:maximum 24;
+    units:unit   units:db
+],
+[
+    a lv2:InputPort, lv2:ControlPort;
+    lv2:index 9;
+    lv2:symbol "UP_ON";
+    lv2:name "Upwards Compression";
+    lv2:shortname "Up Compression";
+    lv2:portProperty lv2:toggled , lv2:integer ;
+    lv2:default 1 ;
+    lv2:minimum 0 ;
+    lv2:maximum 1 ;
+],
+[
+    a lv2:ControlPort, lv2:InputPort;
+    lv2:index 10;
+    lv2:symbol "UP_THRES";
+    lv2:name "Upwards Threshold";
+    lv2:shortname "Up Threshold";
+    lv2:default -40;
+    lv2:minimum -70;
+    lv2:maximum 0;
+    units:unit   units:db
+],
+[
+    a lv2:ControlPort, lv2:InputPort;
+    lv2:index 11;
+    lv2:symbol "UP_KNEE";
+    lv2:name "Upwards Knee";
+    lv2:shortname "Up Knee";
+    lv2:default 20;
+    lv2:minimum 0;
+    lv2:maximum 40;
+    units:unit   units:db
+],
+[
+    a lv2:ControlPort, lv2:InputPort;
+    lv2:index 12;
+    lv2:symbol "UP_ATTACK";
+    lv2:name "Upwards Attack";
+    lv2:shortname "Up Attack";
+    lv2:default 10;
+    lv2:minimum 0.1;
+    lv2:maximum 200;
+    units:unit   units:ms
+],
+[
+    a lv2:ControlPort, lv2:InputPort;
+    lv2:index 13;
+    lv2:symbol "UP_RELEASE";
+    lv2:name "Upwards Release";
+    lv2:shortname "Up Release";
+    lv2:default 100;
+    lv2:minimum 1;
+    lv2:maximum 5000;
+    units:unit   units:ms
+],
+[
+    a lv2:ControlPort, lv2:InputPort;
+    lv2:index 14;
+    lv2:symbol "UP_RATIO";
+    lv2:name "Upwards Ratio";
+    lv2:shortname "Up Ratio";
+    lv2:default 1;
+    lv2:minimum 1;
+    lv2:maximum 30;
+    lv2:portProperty lv2:logarithmic;
+],
+[
+    a lv2:ControlPort, lv2:InputPort;
+    lv2:index 15;
+    lv2:symbol "UP_MAKEUP";
+    lv2:name "Upwards Makeup Gain";
+    lv2:shortname "Up MakeupGain";
+    lv2:default 12;
+    lv2:minimum -30;
+    lv2:maximum 24;
+    units:unit   units:db
+],
+[
+    a lv2:ControlPort, lv2:InputPort;
+    lv2:index 16;
+    lv2:symbol "LIMIT_THRESHOLD";
     lv2:name "Limiter Threshold";
     lv2:shortname "LimiterThreshold";
-    lv2:default -20;
+    lv2:default -3;
     lv2:minimum -50;
     lv2:maximum 0;
     units:unit   units:db
 ],
 [
     a lv2:ControlPort, lv2:InputPort;
-    lv2:index 9;
-    lv2:symbol "MasterVolume";
-    lv2:name "MasterVolume";
-    lv2:shortname "LimiterMasterVolume";
+    lv2:index 17;
+    lv2:symbol "MASTER_VOL";
+    lv2:name "Master Volume";
+    lv2:shortname "MasterVol";
     lv2:default 0;
     lv2:minimum -30;
     lv2:maximum 30;
