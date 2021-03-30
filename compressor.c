@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 
+#include "compressor_core.h"
+
 /**********************************************************************************************************************************************************/
 
 #define PLUGIN_URI "http://VeJaPlugins.com/plugins/Release/Compressor"
@@ -15,41 +17,49 @@
 #define SAMPLERATE 48000
 
 typedef enum {
-    PLUGIN_INPUT,
-    PLUGIN_OUTPUT,
-    PLUGIN_MAKEUP,
-    PLUGIN_THRESHOLD,
-    PLUGIN_KNEE,
-    PLUGIN_ATTACK,
-    PLUGIN_RELEASE,
-    PLUGIN_RATIO,
-    PLUGIN_LIMIT_THRESHOLD,
-    PLUGIN_MASTER_VOL
+    INPUT_L,
+    INPUT_R,
+    OUTPUT_L,
+    OUTPUT_R,
+    THRES,
+    KNEE,
+    ATTACK,
+    RELEASE,
+    RATIO,
+    MAKEUP,
+    MASTER_VOL
 }PortIndex;
 
 /**********************************************************************************************************************************************************/
 
 typedef struct{
-    
+
     //ports
-    float* input;
-    float* output;
-    float* makeup;
+    float* input_left;
+    float* input_right;
+    float* output_left;
+    float* output_right;
+
     float* threshold;
     float* knee;
     float* attack;
     float* release;
     float* ratio;
-    float* limit_threshold;
+    float* makeup;
+
     float* volume;
 
-    //knee_type_t prev_knee;
-    //int prev_attack;
-    //int prev_release;
-    //float prev_ratio;
-    //float prev_threshold;
+    float *bfr_l;
+    float *bfr_r;
 
-    //compressor_t compressor;
+    float prev_threshold;
+    float prev_knee;
+    float prev_attack;
+    float prev_release;
+    float prev_ratio;
+    float prev_makeup;
+
+    sf_compressor_state_st compressor_state;
 
 } Compressor;
 
@@ -66,7 +76,10 @@ const LV2_Feature* const* features)
 {
     Compressor* self = (Compressor*)malloc(sizeof(Compressor));
 
-    //compressor_init(&self->compressor, COMP_BUF_SIZE, DOWNWARD, 48000);
+    self->bfr_l = (float*)malloc(256*sizeof(float));
+    self->bfr_r = (float*)malloc(256*sizeof(float));
+
+    compressor_init(&self->compressor_state, samplerate);
 
     return (LV2_Handle)self;
 }
@@ -77,34 +90,40 @@ static void connect_port(LV2_Handle instance, uint32_t port, void *data)
 
     switch ((PortIndex)port)
     {
-        case PLUGIN_INPUT:
-            self->input = (float*) data;
+        case INPUT_L:
+            self->input_left = (float*) data;
             break;
-        case PLUGIN_OUTPUT:
-            self->output = (float*) data;
+        case INPUT_R:
+            self->input_right = (float*) data;
             break;
-        case PLUGIN_MAKEUP:
-            self->makeup = (float*) data;
+
+        case OUTPUT_L:
+            self->output_left = (float*) data;
             break;
-        case PLUGIN_THRESHOLD:
+        case OUTPUT_R:
+            self->output_right = (float*) data;
+            break;
+
+        case THRES:
             self->threshold = (float*) data;
             break;
-        case PLUGIN_KNEE:
+        case KNEE:
             self->knee = (float*) data;
             break;
-        case PLUGIN_ATTACK:
+        case ATTACK:
             self->attack = (float*) data;
             break;
-        case PLUGIN_RELEASE:
+        case RELEASE:
             self->release = (float*) data;
             break;
-        case PLUGIN_RATIO:
+        case RATIO:
             self->ratio = (float*) data;
             break;
-        case PLUGIN_LIMIT_THRESHOLD:
-            self->limit_threshold = (float*) data;
+        case MAKEUP:
+            self->makeup = (float*) data;
             break;
-        case PLUGIN_MASTER_VOL:
+
+        case MASTER_VOL:
             self->volume = (float*) data;
             break;
     }
@@ -119,28 +138,27 @@ void activate(LV2_Handle instance)
 void run(LV2_Handle instance, uint32_t n_samples)
 {
     Compressor* self = (Compressor*)instance;    
-/*
-    //controls
-    float makeup = *(self->makeup);
-    float volume = *(self->volume);
-    float threshold = *(self->threshold);
-    float ratio = *(self->ratio);
-    knee_type_t knee = (*(self->knee) == 0)? SOFT_KNEE : HARD_KNEE;
-    int attack = (int)(*(self->attack) / (1000.f / SAMPLERATE));
-    int release = (int)(*(self->release) / (1000.f / SAMPLERATE));
 
-    if ((self->prev_threshold != threshold) || (self->prev_ratio != ratio) || (self->prev_release != release) || (self->prev_knee != knee) || (self->prev_attack != attack))
+    if ((self->prev_threshold != (float)*self->threshold) || (self->prev_knee != (float)*self->knee) || (self->prev_attack != (float)*self->attack) || (self->prev_release != (float)*self->release) || (self->prev_ratio != (float)*self->ratio) || (self->prev_makeup != (float)*self->makeup) )
     {
-        compressor_update_parameters(&self->compressor, threshold, ratio, attack, release, knee);
-    
-        self->prev_attack = attack;
-        self->prev_release = release;
-        self->prev_knee = knee;
-        self->prev_ratio = ratio;
-        self->prev_threshold = threshold;
+        compressor_set_params(&self->compressor_state, (float)*self->threshold,
+                                (float)*self->knee, (float)*self->ratio, ((float)*self->attack / 1000), ((float)*self->release / 1000), (float)*self->makeup);
+
+        self->prev_threshold = (float)*self->threshold;
+        self->prev_knee = (float)*self->knee;
+        self->prev_attack = (float)*self->attack;
+        self->prev_release = (float)*self->release;
+        self->prev_ratio = (float)*self->ratio;
+        self->prev_makeup = (float)*self->makeup;
     }
 
-    compressor_run(&self->compressor, self->input, self->output, n_samples);*/
+    compressor_process(&self->compressor_state, n_samples, self->input_left, self->input_left, self->bfr_l, self->bfr_r);
+
+    for (uint32_t i = 0; i < n_samples; i++)
+    {
+        self->output_left[i] = self->bfr_l[i] * cmop_db2lin((float)*self->volume);
+        self->output_right[i] = self->bfr_r[i] * cmop_db2lin((float)*self->volume);
+    }
 }
 
 /**********************************************************************************************************************************************************/
