@@ -70,7 +70,7 @@ lv2:port
     lv2:portProperty lv2:enumeration , lv2:integer ;
     lv2:default 0 ;
     lv2:minimum 0 ;
-    lv2:maximum 5 ;
+    lv2:maximum 4 ;
     lv2:scalePoint
     [
         rdfs:label "Off" ;
@@ -84,9 +84,6 @@ lv2:port
     ] , [
         rdfs:label "Heavy Comp" ;
         rdf:value 3 
-    ] , [
-        rdfs:label "Extreme Comp" ;
-        rdf:value 4 
     ]
 ],
 [
@@ -96,7 +93,7 @@ lv2:port
     lv2:name "Release";
     lv2:shortname "Release";
     lv2:default 100;
-    lv2:minimum 30;
+    lv2:minimum 50;
     lv2:maximum 1000;
     units:unit   units:ms
 ],

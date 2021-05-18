@@ -147,7 +147,7 @@ void run(LV2_Handle instance, uint32_t n_samples)
 
             //heavy compression
             case 3:
-                compressor_set_params(&self->compressor_state, -25.f,
+                compressor_set_params(&self->compressor_state, -15.f,
                                         15.f, 4.f, 0.0001f, ((float)*self->release/1000), -3.f);
             break;
 
