@@ -25,7 +25,7 @@
 
 /**********************************************************************************************************************************************************/
 
-#define PLUGIN_URI "http://VeJaPlugins.com/plugins/Release/Compressor"
+#define PLUGIN_URI "http://moddevices.com/plugins/mod-devel/System-Compressor"
 
 #define MAP(x, Imin, Imax, Omin, Omax)      ( x - Imin ) * (Omax -  Omin)  / (Imax - Imin) + Omin;
 
@@ -37,12 +37,8 @@ typedef enum {
     INPUT_R,
     OUTPUT_L,
     OUTPUT_R,
-    THRES,
-    KNEE,
-    ATTACK,
+    COMP_MODE,
     RELEASE,
-    RATIO,
-    MAKEUP,
     MASTER_VOL
 }PortIndex;
 
@@ -56,24 +52,16 @@ typedef struct{
     float* output_left;
     float* output_right;
 
-    float* threshold;
-    float* knee;
-    float* attack;
     float* release;
-    float* ratio;
-    float* makeup;
+    float* mode;
 
     float* volume;
 
     float *bfr_l;
     float *bfr_r;
 
-    float prev_threshold;
-    float prev_knee;
-    float prev_attack;
     float prev_release;
-    float prev_ratio;
-    float prev_makeup;
+    float prev_mode;
 
     sf_compressor_state_st compressor_state;
 
@@ -92,8 +80,8 @@ const LV2_Feature* const* features)
 {
     Compressor* self = (Compressor*)malloc(sizeof(Compressor));
 
-    self->bfr_l = (float*)malloc(256*sizeof(float));
-    self->bfr_r = (float*)malloc(256*sizeof(float));
+    self->bfr_l = (float*)malloc(COMP_BUF_SIZE*sizeof(float));
+    self->bfr_r = (float*)malloc(COMP_BUF_SIZE*sizeof(float));
 
     compressor_init(&self->compressor_state, samplerate);
 
@@ -120,25 +108,12 @@ static void connect_port(LV2_Handle instance, uint32_t port, void *data)
             self->output_right = (float*) data;
             break;
 
-        case THRES:
-            self->threshold = (float*) data;
-            break;
-        case KNEE:
-            self->knee = (float*) data;
-            break;
-        case ATTACK:
-            self->attack = (float*) data;
+        case COMP_MODE:
+            self->mode = (float*) data;
             break;
         case RELEASE:
             self->release = (float*) data;
             break;
-        case RATIO:
-            self->ratio = (float*) data;
-            break;
-        case MAKEUP:
-            self->makeup = (float*) data;
-            break;
-
         case MASTER_VOL:
             self->volume = (float*) data;
             break;
@@ -155,25 +130,54 @@ void run(LV2_Handle instance, uint32_t n_samples)
 {
     Compressor* self = (Compressor*)instance;    
 
-    if ((self->prev_threshold != (float)*self->threshold) || (self->prev_knee != (float)*self->knee) || (self->prev_attack != (float)*self->attack) || (self->prev_release != (float)*self->release) || (self->prev_ratio != (float)*self->ratio) || (self->prev_makeup != (float)*self->makeup) )
-    {
-        compressor_set_params(&self->compressor_state, (float)*self->threshold,
-                                (float)*self->knee, (float)*self->ratio, ((float)*self->attack / 1000), ((float)*self->release / 1000), (float)*self->makeup);
+    if ((self->prev_release!= (float)*self->release) || (self->prev_mode != (float)*self->mode)) {
+        switch((int)*self->mode)
+        {
+            //light compression
+            case 1:
+                compressor_set_params(&self->compressor_state, -12.f,
+                                        12.f, 2.f, 0.0001f, ((float)*self->release/1000), -3.f);
+            break;
 
-        self->prev_threshold = (float)*self->threshold;
-        self->prev_knee = (float)*self->knee;
-        self->prev_attack = (float)*self->attack;
+            //medium compression
+            case 2:
+                compressor_set_params(&self->compressor_state, -12.f,
+                                        12.f, 3.f, 0.0001f, ((float)*self->release/1000), -3.f);
+            break;
+
+            //heavy compression
+            case 3:
+                compressor_set_params(&self->compressor_state, -25.f,
+                                        15.f, 4.f, 0.0001f, ((float)*self->release/1000), -3.f);
+            break;
+
+            //extreme compression
+            case 4:
+            default:
+                compressor_set_params(&self->compressor_state, -25.f,
+                                        15.f, 10.f, 0.0001f, ((float)*self->release/1000), -6.f);
+            break;
+        }
+
         self->prev_release = (float)*self->release;
-        self->prev_ratio = (float)*self->ratio;
-        self->prev_makeup = (float)*self->makeup;
+        self->prev_mode = (float)*self->mode;
     }
 
-    compressor_process(&self->compressor_state, n_samples, self->input_left, self->input_left, self->bfr_l, self->bfr_r);
-
-    for (uint32_t i = 0; i < n_samples; i++)
+    if ((int)*self->mode != 0)
     {
-        self->output_left[i] = self->bfr_l[i] * cmop_db2lin((float)*self->volume);
-        self->output_right[i] = self->bfr_r[i] * cmop_db2lin((float)*self->volume);
+        compressor_process(&self->compressor_state, n_samples, self->input_left, self->input_left, self->bfr_l, self->bfr_r);
+    
+        for (uint32_t i = 0; i < n_samples; i++) {
+            self->output_left[i] = self->bfr_l[i] * cmop_db2lin((float)*self->volume);
+            self->output_right[i] = self->bfr_r[i] * cmop_db2lin((float)*self->volume);
+        }
+    }
+    else
+    {
+        for (uint32_t i = 0; i < n_samples; i++) {
+            self->output_left[i] = self->input_left[i] * cmop_db2lin((float)*self->volume);
+            self->output_right[i] = self->input_right[i] * cmop_db2lin((float)*self->volume);
+        }
     }
 }
 

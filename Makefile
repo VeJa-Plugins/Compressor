@@ -1,10 +1,10 @@
 #!/usr/bin/make -f
-# Makefile for compressor.lv2 #
+# Makefile for system-compressor.lv2 #
 # --------------------------------- #
 
 include Makefile.mk
 
-NAME = compressor
+NAME = system-compressor
 
 # --------------------------------------------------------------
 # Installation path

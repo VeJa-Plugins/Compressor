@@ -1,5 +1,5 @@
 #!/usr/bin/make -f
-# Makefile for compressor.lv2 #
+# Makefile for system-compressor.lv2 #
 # ----------------------- #
 #
 
