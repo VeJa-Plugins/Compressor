@@ -165,7 +165,7 @@ void run(LV2_Handle instance, uint32_t n_samples)
 
     if ((int)*self->mode != 0)
     {
-        compressor_process(&self->compressor_state, n_samples, self->input_left, self->input_left, self->bfr_l, self->bfr_r);
+        compressor_process(&self->compressor_state, n_samples, self->input_left, self->input_right, self->bfr_l, self->bfr_r);
     
         for (uint32_t i = 0; i < n_samples; i++) {
             self->output_left[i] = self->bfr_l[i] * cmop_db2lin((float)*self->volume);
