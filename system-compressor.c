@@ -32,6 +32,8 @@
 #define COMP_BUF_SIZE 256
 #define SAMPLERATE 48000
 
+#define DEZIPPER_CONSTANT  0.5
+
 typedef enum {
     INPUT_L,
     INPUT_R,
@@ -62,6 +64,7 @@ typedef struct{
 
     float prev_release;
     float prev_mode;
+    float prev_volume;
 
     sf_compressor_state_st compressor_state;
 
@@ -168,15 +171,23 @@ void run(LV2_Handle instance, uint32_t n_samples)
         compressor_process(&self->compressor_state, n_samples, self->input_left, self->input_right, self->bfr_l, self->bfr_r);
     
         for (uint32_t i = 0; i < n_samples; i++) {
-            self->output_left[i] = self->bfr_l[i] * cmop_db2lin((float)*self->volume);
-            self->output_right[i] = self->bfr_r[i] * cmop_db2lin((float)*self->volume);
+            //moving average over volume, reduces zipper noise
+            if (self->prev_volume != (float)*self->volume)
+                self->prev_volume = DEZIPPER_CONSTANT * (float)*self->volume + (1.0 - DEZIPPER_CONSTANT) * self->prev_volume;
+
+            self->output_left[i] = self->bfr_l[i] * cmop_db2lin(self->prev_volume);
+            self->output_right[i] = self->bfr_r[i] * cmop_db2lin(self->prev_volume);
         }
     }
     else
     {
         for (uint32_t i = 0; i < n_samples; i++) {
-            self->output_left[i] = self->input_left[i] * cmop_db2lin((float)*self->volume);
-            self->output_right[i] = self->input_right[i] * cmop_db2lin((float)*self->volume);
+            //moving average over volume, reduces zipper noise
+            if (self->prev_volume != (float)*self->volume)
+                self->prev_volume = DEZIPPER_CONSTANT * (float)*self->volume + (1.0 - DEZIPPER_CONSTANT) * self->prev_volume;
+
+            self->output_left[i] = self->input_left[i] * cmop_db2lin(self->prev_volume);
+            self->output_right[i] = self->input_right[i] * cmop_db2lin(self->prev_volume);
         }
     }
 }
