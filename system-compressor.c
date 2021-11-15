@@ -166,28 +166,30 @@ void run(LV2_Handle instance, uint32_t n_samples)
         self->prev_mode = (float)*self->mode;
     }
 
+    float linear_volume = cmop_db2lin((float)*self->volume);
+
     if ((int)*self->mode != 0)
     {
         compressor_process(&self->compressor_state, n_samples, self->input_left, self->input_right, self->bfr_l, self->bfr_r);
     
         for (uint32_t i = 0; i < n_samples; i++) {
             //moving average over volume, reduces zipper noise
-            if (self->prev_volume != (float)*self->volume)
-                self->prev_volume = DEZIPPER_CONSTANT * (float)*self->volume + (1.0 - DEZIPPER_CONSTANT) * self->prev_volume;
+            if (self->prev_volume != linear_volume)
+                self->prev_volume = DEZIPPER_CONSTANT * linear_volume + (1.0 - DEZIPPER_CONSTANT) * self->prev_volume;
 
-            self->output_left[i] = self->bfr_l[i] * cmop_db2lin(self->prev_volume);
-            self->output_right[i] = self->bfr_r[i] * cmop_db2lin(self->prev_volume);
+            self->output_left[i] = self->bfr_l[i] * self->prev_volume;
+            self->output_right[i] = self->bfr_r[i] * self->prev_volume;
         }
     }
     else
     {
         for (uint32_t i = 0; i < n_samples; i++) {
             //moving average over volume, reduces zipper noise
-            if (self->prev_volume != (float)*self->volume)
-                self->prev_volume = DEZIPPER_CONSTANT * (float)*self->volume + (1.0 - DEZIPPER_CONSTANT) * self->prev_volume;
+            if (self->prev_volume != linear_volume)
+                self->prev_volume = DEZIPPER_CONSTANT * linear_volume + (1.0 - DEZIPPER_CONSTANT) * self->prev_volume;
 
-            self->output_left[i] = self->input_left[i] * cmop_db2lin(self->prev_volume);
-            self->output_right[i] = self->input_right[i] * cmop_db2lin(self->prev_volume);
+            self->output_left[i] = self->input_left[i] * self->prev_volume;
+            self->output_right[i] = self->input_right[i] * self->prev_volume;
         }
     }
 }
